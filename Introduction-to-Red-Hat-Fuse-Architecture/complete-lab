@@ -1,0 +1,94 @@
+Lab 1: Introduction to Red Hat Fuse Architecture
+Objectives
+By the end of this lab, you will:
+
+Understand the core components of Red Hat Fuse (Camel, Karaf, ActiveMQ, and Fuse Tooling).
+Learn how these components interact in a cloud-native, hybrid IT environment.
+Review common use cases and integration scenarios.
+Prerequisites
+Basic understanding of integration concepts and Java.
+A Linux-based environment (Ubuntu 20.04+ recommended).
+Podman or Docker installed (for containerized deployment).
+OpenJDK 11+ installed.
+Access to a terminal/command line.
+Lab Tasks
+Task 1: Explore Core Components of Red Hat Fuse
+Subtask 1.1: Introduction to Apache Camel
+Apache Camel is an open-source integration framework that implements Enterprise Integration Patterns (EIPs).
+
+Steps:
+
+Install Camel dependencies using Maven:
+mvn archetype:generate -DarchetypeGroupId=org.apache.camel.archetypes -DarchetypeArtifactId=camel-archetype-java -DarchetypeVersion=3.20.0
+Navigate to the generated project and run:
+cd camel-java-project
+mvn camel:run
+Observe the Camel context starting up. Expected output:
+[INFO] Started CamelContext: camel-1
+Key Concept: Camel routes define integration flows between systems.
+
+Subtask 1.2: Explore Apache Karaf
+Karaf is a lightweight OSGi container used in Red Hat Fuse.
+
+Steps:
+
+Download Karaf:
+wget https://archive.apache.org/dist/karaf/4.4.0/apache-karaf-4.4.0.tar.gz
+tar -xvf apache-karaf-4.4.0.tar.gz
+cd apache-karaf-4.4.0/bin
+./karaf
+Verify OSGi bundles in the Karaf shell:
+bundle:list
+Install a Camel feature:
+feature:install camel
+Expected Outcome: Karaf console with active OSGi bundles.
+
+Subtask 1.3: Configure ActiveMQ
+ActiveMQ is a messaging broker for asynchronous communication.
+
+Steps:
+
+Run ActiveMQ in a container:
+podman run -d --name activemq -p 61616:61616 -p 8161:8161 rmohr/activemq
+Access the ActiveMQ web console at http://localhost:8161 (credentials: admin/admin).
+Create a test queue named test.queue.
+Troubleshooting: If ports are blocked, use podman ps to verify the container status.
+
+Subtask 1.4: Fuse Tooling in VS Code
+Red Hat Fuse Tooling provides IDE support for integration projects.
+
+Steps:
+
+Install VS Code and the "Red Hat Fuse Tooling" extension.
+Create a new Camel project:
+File > New → Red Hat Fuse → Camel Project.
+Design a sample route using the visual editor.
+Key Concept: Fuse Tooling simplifies route development with drag-and-drop.
+
+Task 2: Interaction in a Cloud-Native Environment
+Subtask 2.1: Deploy Fuse on OpenShift
+Log in to OpenShift:
+oc login --server=<your-cluster-url>
+Deploy a Fuse integration using S2I:
+oc new-app --name=my-fuse-app https://github.com/syndesis-quickstarts/rest-http-api
+Expected Outcome: Fuse application running in a containerized environment.
+
+Task 3: Review Use Cases
+Subtask 3.1: File Integration Scenario
+Create a Camel route to move files:
+from("file:/input?noop=true")
+  .log("Processing file: ${header.CamelFileName}")
+  .to("file:/output");
+Place a test file in /input and verify it appears in /output.
+Conclusion
+In this lab, you:
+
+Explored Red Hat Fuse components (Camel, Karaf, ActiveMQ, and Tooling).
+Deployed Fuse integration in a cloud-native environment.
+Reviewed real-world use cases.
+Next Steps
+Experiment with advanced Camel EIPs (e.g., splitter, aggregator).
+Explore Fuse on OpenShift with Knative for serverless integrations.
+Troubleshooting Tips
+For Karaf issues, check logs in apache-karaf-4.4.0/data/log/.
+Use oc logs <pod-name> for OpenShift debugging.
