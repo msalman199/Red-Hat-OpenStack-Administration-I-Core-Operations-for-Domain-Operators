@@ -1,0 +1,117 @@
+Lab 2: Apache Camel Overview
+Lab Objectives
+By the end of this lab, you will:
+
+Understand Apache Camel’s role as an integration framework.
+Learn about Enterprise Integration Patterns (EIPs).
+Create a simple Camel route using Java DSL.
+Prerequisites
+Before starting, ensure you have:
+
+Java JDK 11+ installed (java -version to verify).
+Apache Maven 3.6+ installed (mvn -v to verify).
+A text editor (VS Code, IntelliJ, or Eclipse with Camel support).
+Basic knowledge of Java and Maven.
+Task 1: Understanding Apache Camel as an Integration Framework
+Subtask 1.1: Introduction to Apache Camel
+Apache Camel is an open-source integration framework that implements Enterprise Integration Patterns (EIPs) to facilitate communication between different systems.
+
+Key Features:
+
+Supports multiple protocols (HTTP, JMS, FTP, etc.).
+Provides domain-specific languages (DSL) like Java, XML, and YAML.
+Lightweight and embeddable in Java applications.
+Subtask 1.2: Camel’s Core Components
+Camel consists of:
+
+Routes – Define the flow of messages.
+Components – Connectors to external systems (e.g., camel-http, camel-jms).
+Processors – Modify or route messages (e.g., filter, transform).
+Expected Outcome:
+
+Understand Camel’s purpose and architecture.
+Task 2: Understanding Enterprise Integration Patterns (EIPs)
+Subtask 2.1: Common EIPs in Camel
+Camel implements EIPs such as:
+
+Message Routing (Content-Based Router, Recipient List).
+Message Transformation (Enricher, Content Enricher).
+Messaging Systems (Pipes and Filters, Message Bus).
+Example:
+A Content-Based Router directs messages based on their content:
+
+from("direct:start")  
+    .choice()  
+        .when(header("type").isEqualTo("A"))  
+            .to("direct:routeA")  
+        .when(header("type").isEqualTo("B"))  
+            .to("direct:routeB")  
+    .otherwise()  
+        .to("direct:default");  
+Subtask 2.2: EIP Use Cases
+Aggregator – Combine multiple messages into one.
+Splitter – Break a message into smaller parts.
+Expected Outcome:
+
+Recognize key EIPs and their implementation in Camel.
+Task 3: Creating a Simple Camel Route Using Java DSL
+Subtask 3.1: Setting Up a Maven Project
+Generate a new Maven project:
+mvn archetype:generate -DgroupId=com.example -DartifactId=camel-lab -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+Add Camel dependencies in pom.xml:
+<dependencies>  
+    <dependency>  
+        <groupId>org.apache.camel</groupId>  
+        <artifactId>camel-core</artifactId>  
+        <version>3.20.0</version>  
+    </dependency>  
+    <dependency>  
+        <groupId>org.apache.camel</groupId>  
+        <artifactId>camel-main</artifactId>  
+        <version>3.20.0</version>  
+    </dependency>  
+</dependencies>  
+Subtask 3.2: Writing a Basic Camel Route
+Create a Java class SimpleRouteBuilder.java:
+import org.apache.camel.builder.RouteBuilder;  
+
+public class SimpleRouteBuilder extends RouteBuilder {  
+    @Override  
+    public void configure() throws Exception {  
+        from("timer:myTimer?period=1000")  
+            .log("Hello from Apache Camel!");  
+    }  
+}  
+Create a Main class to run the route:
+import org.apache.camel.main.Main;  
+
+public class CamelApp {  
+    public static void main(String[] args) throws Exception {  
+        Main main = new Main();  
+        main.configure().addRoutesBuilder(new SimpleRouteBuilder());  
+        main.run();  
+    }  
+}  
+Subtask 3.3: Running the Application
+Compile and run:
+mvn compile exec:java -Dexec.mainClass="CamelApp"
+Expected Output:
+[imer://myTimer] Hello from Apache Camel!  
+[imer://myTimer] Hello from Apache Camel!  
+Troubleshooting Tips:
+
+If the app doesn’t run, check Maven dependencies (mvn clean install).
+Ensure Main class is correctly configured.
+Expected Outcome:
+
+A running Camel application logging messages every second.
+Conclusion
+In this lab, you:
+✔ Learned about Apache Camel’s role in integration.
+✔ Explored key Enterprise Integration Patterns (EIPs).
+✔ Built and executed a simple Camel route using Java DSL.
+
+Next Steps:
+
+Experiment with different EIPs (split, aggregate).
+Integrate Camel with external systems (Kafka, REST APIs).
