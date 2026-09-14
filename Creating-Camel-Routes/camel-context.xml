@@ -1,0 +1,15 @@
+<camelContext xmlns="http://camel.apache.org/schema/spring">
+    <route>
+        <from uri="file:data/xml-input?noop=true"/>
+        <log message="XML File processed: ${file:name}"/>
+        <to uri="file:data/xml-output"/>
+    </route>
+</camelContext>
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class App {
+    public static void main(String[] args) throws Exception {
+        new ClassPathXmlApplicationContext("META-INF/spring/camel-context.xml");
+        Thread.sleep(5000); // Keep the app running
+    }
+}

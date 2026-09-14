@@ -1,0 +1,135 @@
+Lab 3: Creating Camel Routes
+Objectives
+By the end of this lab, you will be able to:
+
+Define and implement Apache Camel routes using Java DSL and XML DSL.
+Use Camel components such as JMS, HTTP, and File as endpoints.
+Test route functionality with different data sources and sinks.
+Prerequisites
+Before starting this lab, ensure you have:
+
+Java JDK 11+ installed.
+Apache Maven installed.
+Apache Camel 3.x dependencies (will be added via Maven).
+A text editor (VS Code, IntelliJ, or Eclipse).
+Basic knowledge of Java and XML.
+Lab Setup
+Create a Maven Project
+mvn archetype:generate -DgroupId=com.example -DartifactId=camel-lab -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+cd camel-lab
+Add Camel Dependencies
+Open pom.xml and add:
+<dependencies>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-core</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-jms</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-http</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-file</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+</dependencies>
+Build the Project
+mvn clean install
+Task 1: Define Routes Using Java DSL
+Subtask 1.1: Create a Basic File Route
+Create a Java Class (FileRoute.java):
+package com.example;
+
+import org.apache.camel.builder.RouteBuilder;
+
+public class FileRoute extends RouteBuilder {
+    @Override
+    public void configure() throws Exception {
+        from("file:data/input?noop=true")
+            .log("File received: ${file:name}")
+            .to("file:data/output");
+    }
+}
+Run the Route
+package com.example;
+
+import org.apache.camel.main.Main;
+
+public class App {
+    public static void main(String[] args) throws Exception {
+        Main main = new Main();
+        main.configure().addRoutesBuilder(new FileRoute());
+        main.run();
+    }
+}
+Expected Outcome
+Place a file in data/input.
+The file will be moved to data/output with a log message.
+Subtask 1.2: HTTP to File Route
+Modify FileRoute.java
+from("jetty:http://localhost:8080/myEndpoint")
+    .log("HTTP Request received: ${body}")
+    .to("file:data/http-output");
+Test with curl
+curl -X POST -d "Hello Camel" http://localhost:8080/myEndpoint
+Expected Outcome
+The HTTP request body is saved in data/http-output.
+Task 2: Define Routes Using XML DSL
+Subtask 2.1: Create camel-context.xml
+Add XML Configuration (src/main/resources/META-INF/spring/camel-context.xml):
+<camelContext xmlns="http://camel.apache.org/schema/spring">
+    <route>
+        <from uri="file:data/xml-input?noop=true"/>
+        <log message="XML File processed: ${file:name}"/>
+        <to uri="file:data/xml-output"/>
+    </route>
+</camelContext>
+Run with Spring
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class App {
+    public static void main(String[] args) throws Exception {
+        new ClassPathXmlApplicationContext("META-INF/spring/camel-context.xml");
+        Thread.sleep(5000); // Keep the app running
+    }
+}
+Expected Outcome
+Files in data/xml-input are moved to data/xml-output.
+Task 3: Test Route Functionality
+Subtask 3.1: JMS Integration (ActiveMQ)
+Add ActiveMQ Dependency (pom.xml):
+<dependency>
+    <groupId>org.apache.activemq</groupId>
+    <artifactId>activemq-camel</artifactId>
+    <version>5.16.6</version>
+</dependency>
+Create a JMS Route (JmsRoute.java):
+from("activemq:queue:testQueue")
+    .log("JMS Message: ${body}")
+    .to("file:data/jms-output");
+Send a Test Message
+camel-jms producer --destination testQueue --message "Hello JMS"
+Expected Outcome
+The message is logged and saved in data/jms-output.
+Conclusion
+In this lab, you learned how to:
+✔ Define Camel routes using Java DSL and XML DSL.
+✔ Use File, HTTP, and JMS components.
+✔ Test routes with different data sources.
+
+Next Steps
+Explore more Camel components** (FTP, Kafka, etc.).
+Implement error handling in routes.
+Deploy routes on Red Hat OpenShift.
+Troubleshooting Tips
+File Not Moving? Check directory permissions.
+HTTP Not Working? Ensure the Camel Jetty component is running.
+JMS Issues? Verify ActiveMQ is running (activemq start).
