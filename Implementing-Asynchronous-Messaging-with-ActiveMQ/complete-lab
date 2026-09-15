@@ -1,0 +1,162 @@
+Lab 7: Implementing Asynchronous Messaging with ActiveMQ
+Objectives
+Integrate Apache Camel with Apache ActiveMQ for asynchronous message processing
+Configure message queues and routing in Camel and ActiveMQ
+Implement transactional message processing and testing
+Prerequisites
+Java JDK 11 or later installed
+Apache Maven 3.6+ installed
+Basic understanding of Java and messaging concepts
+Access to a terminal/command prompt
+Setup Requirements
+Install ActiveMQ:
+wget https://archive.apache.org/dist/activemq/5.16.3/apache-activemq-5.16.3-bin.tar.gz
+tar xzf apache-activemq-5.16.3-bin.tar.gz
+cd apache-activemq-5.16.3/bin
+./activemq start
+Verify ActiveMQ is running by accessing the admin console at: http://localhost:8161/admin (default credentials: admin/admin)
+Lab Tasks
+Task 1: Configure Camel with ActiveMQ
+Subtask 1.1: Create Maven Project
+mvn archetype:generate \
+  -DarchetypeGroupId=org.apache.camel.archetypes \
+  -DarchetypeArtifactId=camel-archetype-java \
+  -DarchetypeVersion=3.14.0 \
+  -DgroupId=com.example \
+  -DartifactId=camel-activemq-demo \
+  -Dversion=1.0.0
+Subtask 1.2: Add Dependencies
+Edit pom.xml:
+
+<dependencies>
+  <!-- Camel Core -->
+  <dependency>
+    <groupId>org.apache.camel</groupId>
+    <artifactId>camel-core</artifactId>
+    <version>3.14.0</version>
+  </dependency>
+  
+  <!-- ActiveMQ -->
+  <dependency>
+    <groupId>org.apache.camel</groupId>
+    <artifactId>camel-activemq</artifactId>
+    <version>3.14.0</version>
+  </dependency>
+  
+  <!-- For testing -->
+  <dependency>
+    <groupId>org.apache.camel</groupId>
+    <artifactId>camel-test</artifactId>
+    <version>3.14.0</version>
+    <scope>test</scope>
+  </dependency>
+</dependencies>
+Subtask 1.3: Configure ActiveMQ Connection
+Create src/main/resources/application.properties:
+
+activemq.broker.url=tcp://localhost:61616
+activemq.username=admin
+activemq.password=admin
+Task 2: Set Up Message Queue and Routing
+Subtask 2.1: Create Camel Route
+Create src/main/java/com/example/ActiveMQRoutes.java:
+
+import org.apache.camel.builder.RouteBuilder;
+
+public class ActiveMQRoutes extends RouteBuilder {
+    @Override
+    public void configure() throws Exception {
+        // Route to consume from ActiveMQ queue
+        from("activemq:queue:inputQueue")
+            .log("Received message: ${body}")
+            .process(exchange -> {
+                String message = exchange.getIn().getBody(String.class);
+                String processedMsg = "Processed: " + message;
+                exchange.getMessage().setBody(processedMsg);
+            })
+            .to("activemq:queue:outputQueue");
+    }
+}
+Subtask 2.2: Create Main Application Class
+Create src/main/java/com/example/ActiveMQDemo.java:
+
+import org.apache.camel.main.Main;
+import org.apache.camel.component.activemq.ActiveMQComponent;
+
+public class ActiveMQDemo {
+    public static void main(String[] args) throws Exception {
+        Main main = new Main();
+        
+        // Configure ActiveMQ component
+        ActiveMQComponent activemq = new ActiveMQComponent();
+        activemq.setBrokerURL("tcp://localhost:61616");
+        activemq.setUsername("admin");
+        activemq.setPassword("admin");
+        
+        main.bind("activemq", activemq);
+        main.addRouteBuilder(new ActiveMQRoutes());
+        
+        System.out.println("Starting Camel. Press CTRL+C to terminate.");
+        main.run();
+    }
+}
+Task 3: Implement Transactional Processing
+Subtask 3.1: Modify Route for Transactions
+Update ActiveMQRoutes.java:
+
+from("activemq:queue:inputQueue?transacted=true")
+    .transacted()
+    .log("Received message: ${body}")
+    .process(exchange -> {
+        String message = exchange.getIn().getBody(String.class);
+        if(message.contains("error")) {
+            throw new RuntimeException("Simulated error");
+        }
+        String processedMsg = "Processed: " + message;
+        exchange.getMessage().setBody(processedMsg);
+    })
+    .to("activemq:queue:outputQueue")
+    .log("Message processed successfully");
+Subtask 3.2: Test Transactional Behavior
+Run the application:
+mvn compile exec:java -Dexec.mainClass="com.example.ActiveMQDemo"
+Send test messages using ActiveMQ web console:
+Send a normal message (should process successfully)
+Send a message containing "error" (should trigger rollback)
+Verification Steps
+Check ActiveMQ admin console (http://localhost:8161/admin):
+
+Verify messages are in the correct queues
+Check DLQ (Dead Letter Queue) for failed messages
+Expected outcomes:
+
+Normal messages appear in outputQueue
+Messages with "error" remain in inputQueue (due to rollback)
+System logs show processing attempts
+Troubleshooting Tips
+If ActiveMQ connection fails:
+
+Verify ActiveMQ is running (netstat -tulnp | grep 61616)
+Check credentials in application.properties
+If messages aren't processing:
+
+Check Camel logs for errors
+Verify queue names match in producer and consumer
+For transaction issues:
+
+Ensure transacted=true is set in the endpoint URI
+Check ActiveMQ transaction logs
+Conclusion
+In this lab, you successfully:
+
+Configured Apache Camel to work with ActiveMQ
+Created message queues and routing logic
+Implemented transactional message processing
+Tested both successful and failed message scenarios
+This implementation provides a robust foundation for building asynchronous, reliable messaging systems using open-source technologies. The skills learned align with Red Hat OpenShift Development certification requirements for building distributed systems with message brokers.
+
+Next Steps
+Explore message filtering and content-based routing
+Implement message persistence and durability
+Investigate clustering and failover scenarios
+Integrate with other Camel components for enterprise integration patterns
