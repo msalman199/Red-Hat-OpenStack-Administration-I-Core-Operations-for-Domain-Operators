@@ -1,0 +1,213 @@
+Lab 5: Implementing Enterprise Integration Patterns (EIPs) with Apache Camel
+Objectives
+By the end of this lab, you will be able to:
+
+Understand and implement common Enterprise Integration Patterns (EIPs)
+Use Apache Camel DSL to create integration routes
+Apply Content-Based Router, Splitter, and Aggregator patterns
+Develop solutions for real-world integration scenarios
+Prerequisites
+Java JDK 11+ installed
+Apache Maven 3.6+
+Basic understanding of Java and XML
+Text editor or IDE (VS Code, IntelliJ, Eclipse)
+Internet access for dependency downloads
+Setup Instructions
+Create a new Maven project:
+mvn archetype:generate -DgroupId=com.eip -DartifactId=camel-eip-lab -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+Add Camel dependencies to pom.xml:
+<dependencies>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-core</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-main</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-stream</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+</dependencies>
+Lab Tasks
+Task 1: Content-Based Router Pattern
+Objective: Route messages to different endpoints based on message content
+
+Create a new Java class ContentBasedRouterDemo.java:
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.main.Main;
+
+public class ContentBasedRouterDemo {
+    public static void main(String[] args) throws Exception {
+        Main main = new Main();
+        main.configure().addRoutesBuilder(new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                from("direct:start")
+                    .choice()
+                        .when(header("priority").isEqualTo("high"))
+                            .to("stream:out?promptMessage=High priority message: ")
+                        .when(header("priority").isEqualTo("medium"))
+                            .to("stream:out?promptMessage=Medium priority message: ")
+                        .otherwise()
+                            .to("stream:out?promptMessage=Low priority message: ");
+            }
+        });
+        main.run();
+    }
+}
+Run the application and test with different messages:
+// In a separate test class or main method
+ProducerTemplate template = main.getCamelContext().createProducerTemplate();
+template.sendBodyAndHeader("direct:start", "Urgent server issue", "priority", "high");
+template.sendBodyAndHeader("direct:start", "Regular update", "priority", "medium");
+template.sendBodyAndHeader("direct:start", "Informational message", "priority", "low");
+Expected Output:
+
+High priority message: Urgent server issue
+Medium priority message: Regular update
+Low priority message: Informational message
+Troubleshooting Tip: If messages don't appear, verify the route is properly started and the headers are being set correctly.
+
+Task 2: Splitter Pattern
+Objective: Split a single message into multiple parts for individual processing
+
+Create SplitterPatternDemo.java:
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.main.Main;
+
+public class SplitterPatternDemo {
+    public static void main(String[] args) throws Exception {
+        Main main = new Main();
+        main.configure().addRoutesBuilder(new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                from("direct:start")
+                    .split(body().tokenize(","))
+                    .to("stream:out?promptMessage=Processing item: ");
+            }
+        });
+        main.run();
+    }
+}
+Test the splitter with a comma-separated string:
+template.sendBody("direct:start", "apple,orange,banana,grape");
+Expected Output:
+
+Processing item: apple
+Processing item: orange
+Processing item: banana
+Processing item: grape
+Key Concept: The splitter breaks a single message containing multiple items into individual messages for separate processing.
+
+Task 3: Aggregator Pattern
+Objective: Combine multiple related messages into a single message
+
+Create AggregatorPatternDemo.java:
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.main.Main;
+import org.apache.camel.processor.aggregate.GroupedExchangeAggregationStrategy;
+
+public class AggregatorPatternDemo {
+    public static void main(String[] args) throws Exception {
+        Main main = new Main();
+        main.configure().addRoutesBuilder(new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                from("direct:start")
+                    .aggregate(header("orderId"), new GroupedExchangeAggregationStrategy())
+                    .completionSize(3)
+                    .to("stream:out?promptMessage=Completed order batch: ");
+            }
+        });
+        main.run();
+    }
+}
+Test the aggregator with multiple messages:
+template.sendBodyAndHeader("direct:start", "Item1", "orderId", "order123");
+template.sendBodyAndHeader("direct:start", "Item2", "orderId", "order123");
+template.sendBodyAndHeader("direct:start", "Item3", "orderId", "order123");
+Expected Output:
+
+Completed order batch: [Exchange[Item1], Exchange[Item2], Exchange[Item3]]
+Troubleshooting Tip: If aggregation doesn't complete, verify the completion condition (size, timeout, etc.) is being met.
+
+Task 4: Combined Scenario
+Objective: Implement a real-world scenario combining all three patterns
+
+Create CombinedEIPDemo.java:
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.main.Main;
+import org.apache.camel.processor.aggregate.GroupedExchangeAggregationStrategy;
+
+public class CombinedEIPDemo {
+    public static void main(String[] args) throws Exception {
+        Main main = new Main();
+        main.configure().addRoutesBuilder(new RouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                // Split incoming CSV into rows
+                from("direct:start")
+                    .split(body().tokenize("\n"))
+                    .to("direct:processRow");
+                
+                // Route rows based on content
+                from("direct:processRow")
+                    .choice()
+                        .when(body().contains("ERROR"))
+                            .to("direct:errorHandler")
+                        .when(body().contains("WARN"))
+                            .to("direct:warnHandler")
+                        .otherwise()
+                            .to("direct:infoHandler");
+                
+                // Aggregate errors
+                from("direct:errorHandler")
+                    .aggregate(constant(true), new GroupedExchangeAggregationStrategy())
+                    .completionSize(5)
+                    .to("stream:out?promptMessage=Error batch: ");
+            }
+        });
+        main.run();
+    }
+}
+Test with sample data:
+String csvData = "INFO,Service started\n" +
+                 "WARN,Low disk space\n" +
+                 "ERROR,Database connection failed\n" +
+                 "INFO,User logged in\n" +
+                 "ERROR,File not found\n" +
+                 "WARN,High memory usage\n" +
+                 "ERROR,Timeout occurred\n" +
+                 "ERROR,Authentication failed\n" +
+                 "ERROR,Null pointer exception";
+
+template.sendBody("direct:start", csvData);
+Expected Outcome: The system will:
+
+Split the CSV into individual lines
+Route messages to appropriate handlers
+Aggregate error messages in batches of 5
+Conclusion
+In this lab, you have successfully implemented three fundamental Enterprise Integration Patterns using Apache Camel:
+
+Content-Based Router for conditional message routing
+Splitter for dividing messages into parts
+Aggregator for combining related messages
+These patterns form the foundation for solving complex integration challenges in enterprise systems. The combined scenario demonstrated how these patterns can work together to create sophisticated message processing pipelines.
+
+Key Takeaways:
+
+EIPs provide standardized solutions to common integration problems
+Apache Camel's DSL makes implementing EIPs straightforward
+Patterns can be combined to address real-world scenarios
+Proper message routing and processing improves system reliability
+Next Steps:
+
+Explore other EIPs like Message Filter, Dynamic Router, and Wire Tap
+Implement error handling strategies in your routes
+Experiment with different aggregation completion conditions
