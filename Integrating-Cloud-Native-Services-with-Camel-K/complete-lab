@@ -1,0 +1,113 @@
+Lab 11: Integrating Cloud-Native Services with Camel K
+Objectives
+Deploy and run Camel routes in Kubernetes/OpenShift using Camel K
+Integrate Camel routes with OpenShift Kubernetes resources (ConfigMaps and Secrets)
+Utilize OpenShift's scaling and health-check features for integration applications
+Prerequisites
+OpenShift 4.x cluster with cluster-admin access
+oc CLI installed and configured
+Camel K operator installed in the cluster
+kamel CLI installed locally
+Basic knowledge of Kubernetes concepts (Pods, Deployments, Services)
+Basic understanding of Apache Camel concepts
+Setup Instructions
+Verify Camel K operator installation:
+oc get pods -n openshift-operators | grep camel
+Create a new project for this lab:
+oc new-project camel-k-lab
+Task 1: Deploy Camel Routes as Serverless Functions
+Subtask 1.1: Create a Basic Camel K Integration
+Create a new file named hello.groovy:
+// camel-k: language=groovy
+
+from('timer:hello?period=3000')
+    .setBody().constant('Hello from Camel K!')
+    .to('log:info')
+Deploy the integration:
+kamel run hello.groovy --dev
+Expected Outcome: You should see log output every 3 seconds showing the message "Hello from Camel K!"
+
+Subtask 1.2: Make the Integration Serverless
+Modify the integration to scale to zero when idle:
+kamel run hello.groovy --annotation camel.apache.org/force-scaling=true
+Verify the Knative service:
+oc get ksvc
+Troubleshooting Tip: If the integration doesn't scale down, check the Knative serving operator is installed.
+
+Task 2: Integrate with OpenShift Resources
+Subtask 2.1: Use ConfigMaps for Configuration
+Create a ConfigMap:
+oc create configmap my-config --from-literal=message="Hello from ConfigMap!"
+Create config-route.groovy:
+// camel-k: language=groovy
+// camel-k: config=configmap:my-config
+
+from('timer:config?period=5000')
+    .setBody().simple('${configmap:my-config/message}')
+    .to('log:info')
+Deploy the integration:
+kamel run config-route.groovy
+Expected Outcome: The logs should show "Hello from ConfigMap!" every 5 seconds.
+
+Subtask 2.2: Use Secrets for Sensitive Data
+Create a secret:
+oc create secret generic my-secret --from-literal=password=supersecret
+Create secret-route.groovy:
+// camel-k: language=groovy
+// camel-k: config=secret:my-secret
+
+from('timer:secret?period=10000')
+    .setBody().simple('Password is ${secret:my-secret/password}')
+    .to('log:info')
+Deploy the integration:
+kamel run secret-route.groovy
+Security Note: The secret value will be visible in logs - this is for demonstration only.
+
+Task 3: Utilize OpenShift Scaling and Health Checks
+Subtask 3.1: Configure Horizontal Pod Autoscaling
+Create scaling-route.groovy:
+// camel-k: language=groovy
+
+from('timer:scaling?period=1000')
+    .setBody().constant('Testing auto-scaling')
+    .to('log:info')
+Deploy with scaling parameters:
+kamel run scaling-route.groovy \
+    --trait hpa.enabled=true \
+    --trait hpa.max-replicas=5 \
+    --trait hpa.metrics=memory
+Verify HPA:
+oc get hpa
+Subtask 3.2: Add Health Checks
+Modify scaling-route.groovy to add health checks:
+// camel-k: language=groovy
+// camel-k: trait=health.enabled=true
+
+from('timer:health?period=1000')
+    .routeId('health-route')
+    .setBody().constant('Health check test')
+    .to('log:info')
+Redeploy:
+kamel run scaling-route.groovy
+Check health endpoints:
+oc get pod
+oc exec <pod-name> -- curl -s localhost:8080/q/health
+Conclusion
+In this lab, you have:
+
+Successfully deployed Camel K integrations as serverless functions
+Integrated Camel routes with OpenShift ConfigMaps and Secrets
+Configured auto-scaling and health checks for your integrations
+These skills enable you to build robust, scalable integration solutions in cloud-native environments using Camel K.
+
+Cleanup
+To clean up all lab resources:
+
+kamel delete --all
+oc delete configmap my-config
+oc delete secret my-secret
+oc delete project camel-k-lab
+Additional Resources
+Camel K Documentation
+OpenShift Developer Guide
+Knative Serving Documentation

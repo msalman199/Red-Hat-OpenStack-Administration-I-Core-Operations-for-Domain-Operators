@@ -1,0 +1,14 @@
+{"timestamp":2688808,"category":"session_restore","name":"backup_can_be_loaded_session_file","extra":{"loadfail_reason":"N/A","path_key":"clean","can_load":"true","glean_timestamp":"1765017435908"}}
+{"timestamp":2688808,"category":"session_restore","name":"backup_can_be_loaded_session_file","extra":{"loadfail_reason":"N/A","glean_timestamp":"1765017435909","can_load":"true","path_key":"clean"}}
+{"timestamp":2688809,"category":"session_restore","name":"shutdown_success_session_startup","extra":{"shutdown_reason":"N/A","shutdown_ok":"false","glean_timestamp":"1765017435909"}}
+{"timestamp":2689518,"category":"webcompatreporting","name":"reason_dropdown","extra":{"glean_timestamp":"1765017436619","setting":"required"}}
+{"timestamp":2690008,"category":"nimbus_events","name":"startup_database_consistency","extra":{"store_active_count":"28","trigger":"startup","total_db_count":"28","total_store_count":"28","glean_timestamp":"1765017437109","primary":"database","db_active_count":"28"}}
+{"timestamp":2690289,"category":"jsonfile","name":"load_autofillprofiles","extra":{"value":"error_notfounderror","glean_timestamp":"1765017437389"}}
+{"timestamp":2690547,"category":"containers","name":"container_profile_loaded","extra":{"containers":"4","glean_timestamp":"1765017437648"}}
+{"timestamp":2691400,"category":"nimbus_events","name":"is_ready","extra":{"glean_timestamp":"1765017438500"}}
+{"timestamp":2691442,"category":"jsonfile","name":"load_logins","extra":{"value":"error_notfounderror","glean_timestamp":"1765017438542"}}
+{"timestamp":2691443,"category":"upgrade_dialog","name":"trigger_reason","extra":{"glean_timestamp":"1765017438543","value":"not-major"}}
+{"timestamp":2692213,"category":"nimbus_events","name":"database_write","extra":{"success":"true","glean_timestamp":"1765017439314"}}
+{"timestamp":2694935,"category":"normandy","name":"expose_nimbus_experiment","extra":{"featureId":"newtabTrainhopAddon","glean_timestamp":"1765017442035","branchSlug":"rollout","value":"new-tab-147020251114194929-to-release"}}
+{"timestamp":2694935,"category":"nimbus_events","name":"exposure","extra":{"branch":"rollout","feature_id":"newtabTrainhopAddon","glean_timestamp":"1765017442035","experiment":"new-tab-147020251114194929-to-release"}}
+{"timestamp":2936662,"category":"urlbar","name":"abandonment","extra":{"search_engine_default_id":"google-ubuntu-sn","glean_timestamp":"1765017683763","interaction":"typed","results":"tip_onboard","abandonment_type":"blur","available_semantic_sources":"none","sap":"urlbar_newtab","actions":"none","n_results":"1","groups":"heuristic","n_chars":"0","search_mode":"","n_words":"0"}}
