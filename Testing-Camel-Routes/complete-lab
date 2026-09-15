@@ -1,0 +1,148 @@
+Lab 6: Testing Camel Routes
+Objectives
+By the end of this lab, you will be able to:
+
+Create unit and integration tests for Apache Camel routes using JUnit**.
+Simulate message flows and validate results using CamelTestSupport.
+Test error handling and retry policies with dead-letter queues (DLQ).
+Prerequisites
+Basic knowledge of Apache Camel and Java.
+JDK 11+ installed.
+Maven installed.
+An IDE (e.g., VS Code, IntelliJ IDEA).
+Apache Camel dependencies (will be added in the lab).
+Task 1: Setting Up the Project
+Subtask 1.1: Create a Maven Project
+Open a terminal and run:
+mvn archetype:generate -DgroupId=com.example -DartifactId=camel-testing-lab -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+Navigate into the project:
+cd camel-testing-lab
+Subtask 1.2: Add Camel Dependencies
+Open pom.xml and add the following dependencies:
+<dependencies>
+    <!-- Camel Core -->
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-core</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <!-- Camel Test Support -->
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-test-junit5</artifactId>
+        <version>3.20.0</version>
+        <scope>test</scope>
+    </dependency>
+    <!-- JUnit 5 -->
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>5.9.0</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+Save the file and run:
+mvn clean install
+Expected Outcome:
+
+A Maven project with Camel and JUnit dependencies is set up.
+Task 2: Writing a Simple Camel Route and Testing It
+Subtask 2.1: Create a Basic Camel Route
+Create a new Java class SimpleRouteBuilder.java in src/main/java/com/example:
+package com.example;
+
+import org.apache.camel.builder.RouteBuilder;
+
+public class SimpleRouteBuilder extends RouteBuilder {
+    @Override
+    public void configure() throws Exception {
+        from("direct:start")
+            .log("Received message: ${body}")
+            .to("mock:result");
+    }
+}
+Subtask 2.2: Write a JUnit Test Using CamelTestSupport
+Create a test class SimpleRouteTest.java in src/test/java/com/example:
+package com.example;
+
+import org.apache.camel.RoutesBuilder;
+import org.apache.camel.builder.AdviceWith;
+import org.apache.camel.test.junit5.CamelTestSupport;
+import org.junit.jupiter.api.Test;
+
+public class SimpleRouteTest extends CamelTestSupport {
+
+    @Override
+    protected RoutesBuilder createRouteBuilder() throws Exception {
+        return new SimpleRouteBuilder();
+    }
+
+    @Test
+    public void testRoute() throws Exception {
+        // Mock the endpoint
+        AdviceWith.adviceWith(context, "routeId", a -> {
+            a.weaveByToUri("mock:result").replace().to("mock:testResult");
+        });
+
+        // Send a test message
+        template.sendBody("direct:start", "Hello Camel");
+
+        // Assert the result
+        getMockEndpoint("mock:testResult").expectedMessageCount(1);
+        getMockEndpoint("mock:testResult").expectedBodiesReceived("Hello Camel");
+        assertMockEndpointsSatisfied();
+    }
+}
+Expected Outcome:
+
+The test passes, confirming the route processes the message.
+Troubleshooting Tip:
+
+If the test fails, check if routeId matches the actual route ID in SimpleRouteBuilder.
+Task 3: Testing Error Handling and Dead-Letter Queue (DLQ)
+Subtask 3.1: Modify Route to Include Error Handling
+Update SimpleRouteBuilder.java to include error handling:
+public class SimpleRouteBuilder extends RouteBuilder {
+    @Override
+    public void configure() throws Exception {
+        errorHandler(deadLetterChannel("mock:deadLetter"));
+
+        from("direct:start")
+            .choice()
+                .when(body().contains("error"))
+                    .throwException(new IllegalArgumentException("Invalid message"))
+                .otherwise()
+                    .log("Valid message: ${body}")
+                    .to("mock:result");
+    }
+}
+Subtask 3.2: Test Error Handling in JUnit Test
+Add a new test method in SimpleRouteTest.java:
+@Test
+public void testErrorHandling() throws Exception {
+    // Send a message that triggers an error
+    template.sendBody("direct:start", "error");
+
+    // Assert the message was sent to DLQ
+    getMockEndpoint("mock:deadLetter").expectedMessageCount(1);
+    assertMockEndpointsSatisfied();
+}
+Expected Outcome:
+
+The test confirms that error messages are routed to the dead-letter queue.
+Troubleshooting Tip:
+
+If the test fails, verify the errorHandler configuration in the route.
+Conclusion
+In this lab, you learned how to:
+✅ Write JUnit tests for Camel routes using CamelTestSupport.
+✅ Simulate message flows and validate results.
+✅ Test error handling and dead-letter queue behavior.
+
+By mastering these techniques, you can ensure your Camel routes are robust and reliable in production.
+
+Next Steps:
+
+Explore Camel testing with Spring Boot.
+Learn about Camel’s Mock component for more advanced testing.
+Happy Testing! 🚀

@@ -1,0 +1,92 @@
+[[1;34mINFO[m] Error stacktraces are turned on.
+[[1;34mINFO[m] Scanning for projects...
+[[1;31mERROR[m] [ERROR] Some problems were encountered while processing the POMs:
+[FATAL] Non-parseable POM /home/ubuntu/camel-testing-lab/pom.xml: start tag not allowed in epilog but got d (position: END_TAG seen ...</dependencies>\n</project>\n<d... @19:3)  @ line 19, column 3
+ @ 
+[[1;31mERROR[m] The build could not read 1 project -> [1m[Help 1][m
+[1;31morg.apache.maven.project.ProjectBuildingException[m: [1;31mSome problems were encountered while processing the POMs:
+[FATAL] Non-parseable POM /home/ubuntu/camel-testing-lab/pom.xml: start tag not allowed in epilog but got d (position: END_TAG seen ...</dependencies>\n</project>\n<d... @19:3)  @ line 19, column 3
+[m
+    [1mat[m org.apache.maven.project.DefaultProjectBuilder.build ([1mDefaultProjectBuilder.java:397[m)
+    [1mat[m org.apache.maven.graph.DefaultGraphBuilder.collectProjects ([1mDefaultGraphBuilder.java:414[m)
+    [1mat[m org.apache.maven.graph.DefaultGraphBuilder.getProjectsForMavenReactor ([1mDefaultGraphBuilder.java:405[m)
+    [1mat[m org.apache.maven.graph.DefaultGraphBuilder.build ([1mDefaultGraphBuilder.java:82[m)
+    [1mat[m org.apache.maven.DefaultMaven.buildGraph ([1mDefaultMaven.java:542[m)
+    [1mat[m org.apache.maven.DefaultMaven.doExecute ([1mDefaultMaven.java:219[m)
+    [1mat[m org.apache.maven.DefaultMaven.doExecute ([1mDefaultMaven.java:192[m)
+    [1mat[m org.apache.maven.DefaultMaven.execute ([1mDefaultMaven.java:105[m)
+    [1mat[m org.apache.maven.cli.MavenCli.execute ([1mMavenCli.java:960[m)
+    [1mat[m org.apache.maven.cli.MavenCli.doMain ([1mMavenCli.java:293[m)
+    [1mat[m org.apache.maven.cli.MavenCli.main ([1mMavenCli.java:196[m)
+    [1mat[m jdk.internal.reflect.DirectMethodHandleAccessor.invoke ([1mDirectMethodHandleAccessor.java:103[m)
+    [1mat[m java.lang.reflect.Method.invoke ([1mMethod.java:580[m)
+    [1mat[m org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced ([1mLauncher.java:283[m)
+    [1mat[m org.codehaus.plexus.classworlds.launcher.Launcher.launch ([1mLauncher.java:226[m)
+    [1mat[m org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode ([1mLauncher.java:407[m)
+    [1mat[m org.codehaus.plexus.classworlds.launcher.Launcher.main ([1mLauncher.java:348[m)
+[[1;31mERROR[m]   
+[[1;31mERROR[m]   The project  (/home/ubuntu/camel-testing-lab/pom.xml) has 1 error
+[[1;31mERROR[m]     Non-parseable POM /home/ubuntu/camel-testing-lab/pom.xml: start tag not allowed in epilog but got d (position: END_TAG seen ...</dependencies>\n</project>\n<d... @19:3)  @ line 19, column 3 -> [1m[Help 2][m
+[1;31morg.apache.maven.model.io.ModelParseException[m: [1;31mstart tag not allowed in epilog but got d (position: END_TAG seen ...</dependencies>\n</project>\n<d... @19:3) [m
+    [1mat[m org.apache.maven.model.io.DefaultModelReader.read ([1mDefaultModelReader.java:117[m)
+    [1mat[m org.apache.maven.model.io.DefaultModelReader.read ([1mDefaultModelReader.java:85[m)
+    [1mat[m org.apache.maven.model.building.DefaultModelProcessor.read ([1mDefaultModelProcessor.java:111[m)
+    [1mat[m org.apache.maven.model.building.DefaultModelBuilder.readModel ([1mDefaultModelBuilder.java:622[m)
+    [1mat[m org.apache.maven.model.building.DefaultModelBuilder.build ([1mDefaultModelBuilder.java:303[m)
+    [1mat[m org.apache.maven.model.building.DefaultModelBuilder.build ([1mDefaultModelBuilder.java:267[m)
+    [1mat[m org.apache.maven.project.DefaultProjectBuilder.build ([1mDefaultProjectBuilder.java:448[m)
+    [1mat[m org.apache.maven.project.DefaultProjectBuilder.build ([1mDefaultProjectBuilder.java:414[m)
+    [1mat[m org.apache.maven.project.DefaultProjectBuilder.build ([1mDefaultProjectBuilder.java:377[m)
+    [1mat[m org.apache.maven.graph.DefaultGraphBuilder.collectProjects ([1mDefaultGraphBuilder.java:414[m)
+    [1mat[m org.apache.maven.graph.DefaultGraphBuilder.getProjectsForMavenReactor ([1mDefaultGraphBuilder.java:405[m)
+    [1mat[m org.apache.maven.graph.DefaultGraphBuilder.build ([1mDefaultGraphBuilder.java:82[m)
+    [1mat[m org.apache.maven.DefaultMaven.buildGraph ([1mDefaultMaven.java:542[m)
+    [1mat[m org.apache.maven.DefaultMaven.doExecute ([1mDefaultMaven.java:219[m)
+    [1mat[m org.apache.maven.DefaultMaven.doExecute ([1mDefaultMaven.java:192[m)
+    [1mat[m org.apache.maven.DefaultMaven.execute ([1mDefaultMaven.java:105[m)
+    [1mat[m org.apache.maven.cli.MavenCli.execute ([1mMavenCli.java:960[m)
+    [1mat[m org.apache.maven.cli.MavenCli.doMain ([1mMavenCli.java:293[m)
+    [1mat[m org.apache.maven.cli.MavenCli.main ([1mMavenCli.java:196[m)
+    [1mat[m jdk.internal.reflect.DirectMethodHandleAccessor.invoke ([1mDirectMethodHandleAccessor.java:103[m)
+    [1mat[m java.lang.reflect.Method.invoke ([1mMethod.java:580[m)
+    [1mat[m org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced ([1mLauncher.java:283[m)
+    [1mat[m org.codehaus.plexus.classworlds.launcher.Launcher.launch ([1mLauncher.java:226[m)
+    [1mat[m org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode ([1mLauncher.java:407[m)
+    [1mat[m org.codehaus.plexus.classworlds.launcher.Launcher.main ([1mLauncher.java:348[m)
+[1mCaused by[m: org.codehaus.plexus.util.xml.pull.XmlPullParserException: [1;31mstart tag not allowed in epilog but got d (position: END_TAG seen ...</dependencies>\n</project>\n<d... @19:3) [m
+    [1mat[m org.codehaus.plexus.util.xml.pull.MXParser.parseEpilog ([1mMXParser.java:2028[m)
+    [1mat[m org.codehaus.plexus.util.xml.pull.MXParser.nextImpl ([1mMXParser.java:1753[m)
+    [1mat[m org.codehaus.plexus.util.xml.pull.MXParser.next ([1mMXParser.java:1375[m)
+    [1mat[m org.apache.maven.model.io.xpp3.MavenXpp3ReaderEx.read ([1mMavenXpp3ReaderEx.java:4706[m)
+    [1mat[m org.apache.maven.model.io.xpp3.MavenXpp3ReaderEx.read ([1mMavenXpp3ReaderEx.java:875[m)
+    [1mat[m org.apache.maven.model.io.DefaultModelReader.read ([1mDefaultModelReader.java:108[m)
+    [1mat[m org.apache.maven.model.io.DefaultModelReader.read ([1mDefaultModelReader.java:85[m)
+    [1mat[m org.apache.maven.model.building.DefaultModelProcessor.read ([1mDefaultModelProcessor.java:111[m)
+    [1mat[m org.apache.maven.model.building.DefaultModelBuilder.readModel ([1mDefaultModelBuilder.java:622[m)
+    [1mat[m org.apache.maven.model.building.DefaultModelBuilder.build ([1mDefaultModelBuilder.java:303[m)
+    [1mat[m org.apache.maven.model.building.DefaultModelBuilder.build ([1mDefaultModelBuilder.java:267[m)
+    [1mat[m org.apache.maven.project.DefaultProjectBuilder.build ([1mDefaultProjectBuilder.java:448[m)
+    [1mat[m org.apache.maven.project.DefaultProjectBuilder.build ([1mDefaultProjectBuilder.java:414[m)
+    [1mat[m org.apache.maven.project.DefaultProjectBuilder.build ([1mDefaultProjectBuilder.java:377[m)
+    [1mat[m org.apache.maven.graph.DefaultGraphBuilder.collectProjects ([1mDefaultGraphBuilder.java:414[m)
+    [1mat[m org.apache.maven.graph.DefaultGraphBuilder.getProjectsForMavenReactor ([1mDefaultGraphBuilder.java:405[m)
+    [1mat[m org.apache.maven.graph.DefaultGraphBuilder.build ([1mDefaultGraphBuilder.java:82[m)
+    [1mat[m org.apache.maven.DefaultMaven.buildGraph ([1mDefaultMaven.java:542[m)
+    [1mat[m org.apache.maven.DefaultMaven.doExecute ([1mDefaultMaven.java:219[m)
+    [1mat[m org.apache.maven.DefaultMaven.doExecute ([1mDefaultMaven.java:192[m)
+    [1mat[m org.apache.maven.DefaultMaven.execute ([1mDefaultMaven.java:105[m)
+    [1mat[m org.apache.maven.cli.MavenCli.execute ([1mMavenCli.java:960[m)
+    [1mat[m org.apache.maven.cli.MavenCli.doMain ([1mMavenCli.java:293[m)
+    [1mat[m org.apache.maven.cli.MavenCli.main ([1mMavenCli.java:196[m)
+    [1mat[m jdk.internal.reflect.DirectMethodHandleAccessor.invoke ([1mDirectMethodHandleAccessor.java:103[m)
+    [1mat[m java.lang.reflect.Method.invoke ([1mMethod.java:580[m)
+    [1mat[m org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced ([1mLauncher.java:283[m)
+    [1mat[m org.codehaus.plexus.classworlds.launcher.Launcher.launch ([1mLauncher.java:226[m)
+    [1mat[m org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode ([1mLauncher.java:407[m)
+    [1mat[m org.codehaus.plexus.classworlds.launcher.Launcher.main ([1mLauncher.java:348[m)
+[[1;31mERROR[m] 
+[[1;31mERROR[m] Re-run Maven using the [1m-X[m switch to enable full debug logging.
+[[1;31mERROR[m] 
+[[1;31mERROR[m] For more information about the errors and possible solutions, please read the following articles:
+[[1;31mERROR[m] [1m[Help 1][m http://cwiki.apache.org/confluence/display/MAVEN/ProjectBuildingException
+[[1;31mERROR[m] [1m[Help 2][m http://cwiki.apache.org/confluence/display/MAVEN/ModelParseException
