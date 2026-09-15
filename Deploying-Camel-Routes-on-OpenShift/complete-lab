@@ -1,0 +1,133 @@
+Video
+Lab Material
+Lab 12: Deploying Camel Routes on OpenShift
+Objectives
+Containerize Apache Camel routes and deploy them on OpenShift
+Integrate CI/CD pipelines for automated deployment
+Configure OpenShift's native service discovery and load balancing for Camel routes
+Prerequisites
+OpenShift CLI (oc) installed and configured
+Podman or Docker installed
+Basic understanding of Apache Camel and Kubernetes concepts
+Access to an OpenShift cluster with developer permissions
+Maven installed (for Java-based Camel routes)
+Git installed for version control
+Lab Setup
+Verify your OpenShift access:
+
+oc login <openshift_cluster_url> -u <username> -p <password>
+oc project <your_project_name>
+Clone the sample Camel project:
+
+git clone https://github.com/apache/camel-examples.git
+cd camel-examples/examples/camel-example-spring-boot
+Task 1: Containerize and Deploy Camel Routes
+Subtask 1.1: Build Camel Application
+Package the Spring Boot Camel application:
+
+mvn clean package
+Verify the JAR file was created:
+
+ls target/*.jar
+Subtask 1.2: Create Container Image
+Create a Dockerfile:
+
+FROM eclipse-temurin:17-jdk
+COPY target/camel-example-spring-boot-*.jar /app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+Build the image with Podman:
+
+podman build -t camel-spring-boot .
+Tag and push to a container registry:
+
+podman tag camel-spring-boot quay.io/<your-username>/camel-spring-boot:latest
+podman push quay.io/<your-username>/camel-spring-boot:latest
+Subtask 1.3: Deploy to OpenShift
+Create a new app from your image:
+
+oc new-app quay.io/<your-username>/camel-spring-boot:latest
+Expose the service:
+
+oc expose svc/camel-spring-boot
+Verify deployment:
+
+oc get pods
+oc logs <pod-name>
+Expected Outcome: The Camel application should be running in a pod, and you should see route startup messages in the logs.
+
+Task 2: CI/CD Pipeline Integration
+Subtask 2.1: Set Up OpenShift Pipeline
+Create a new file named pipeline.yaml:
+
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: camel-deployment-pipeline
+spec:
+  workspaces:
+  - name: source
+  tasks:
+  - name: build
+    taskRef:
+      name: maven
+    workspaces:
+    - name: source
+      workspace: source
+  - name: deploy
+    taskRef:
+      name: openshift-client
+    params:
+    - name: SCRIPT
+      value: |
+        oc new-app --image-stream=camel-spring-boot --name=camel-app
+        oc expose svc/camel-app
+    runAfter:
+    - build
+Apply the pipeline:
+
+oc apply -f pipeline.yaml
+Subtask 2.2: Trigger Pipeline
+Create a PipelineRun:
+
+tkn pipeline start camel-deployment-pipeline --workspace name=source,emptyDir=""
+Monitor pipeline progress:
+
+tkn pipelinerun logs -f
+Expected Outcome: The pipeline should build and deploy your Camel application automatically.
+
+Task 3: Service Discovery and Load Balancing
+Subtask 3.1: Configure Service Discovery
+Verify the created service:
+
+oc get svc camel-spring-boot
+Access another service from your Camel route:
+
+from("timer:foo?period=5000")
+  .to("http://another-service:8080/api")
+  .log("Response: ${body}");
+Subtask 3.2: Configure Load Balancing
+Scale your deployment:
+
+oc scale deployment/camel-spring-boot --replicas=3
+Verify load balancing:
+
+watch oc get endpoints camel-spring-boot
+Expected Outcome: Requests should be automatically load balanced across all available pods.
+
+Troubleshooting Tips
+If pods fail to start, check logs with oc logs <pod-name>
+For image pull errors, verify your container registry credentials
+If services can't communicate, check network policies with oc get networkpolicy
+For pipeline failures, use tkn pipelinerun describe <run-name>
+Conclusion
+In this lab, you successfully:
+
+Containerized a Camel application and deployed it to OpenShift
+Implemented a CI/CD pipeline for automated deployments
+Configured OpenShift's native service discovery and load balancing
+The deployed Camel routes are now running in a scalable, managed environment with automated deployment capabilities.
+
+Next Steps
+Explore OpenShift Service Mesh for advanced routing
+Implement health checks and metrics for your Camel routes
+Configure autoscaling based on Camel route metrics
