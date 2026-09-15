@@ -1,0 +1,12 @@
+from("direct:xaTransaction")
+    .transacted()
+    .log("Inserting into database...")
+    .to("sql:INSERT INTO orders (id, product, amount) VALUES (2, 'Phone', 500)")
+    .log("Sending JMS message...")
+    .to("activemq:queue:orders");
+from("direct:rollbackTest")
+    .transacted()
+    .log("Attempting transaction...")
+    .to("sql:INSERT INTO orders (id, product, amount) VALUES (3, 'Monitor', 200)")
+    .throwException(new RuntimeException("Forced rollback"))
+    .to("activemq:queue:orders");

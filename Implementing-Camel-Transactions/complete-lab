@@ -1,0 +1,138 @@
+Lab 9: Implementing Camel Transactions
+Objectives
+By the end of this lab, you will be able to:
+
+Configure and manage transactions in Camel routes to ensure data consistency.
+Implement distributed transactions using Camel.
+Use XA transactions for managing multiple resources.
+Set up transaction rollback and commit strategies.
+Prerequisites
+Before starting this lab, ensure you have:
+
+Basic knowledge of Apache Camel and Java.
+JDK 11 or later installed.
+Maven installed (for dependency management).
+A running instance of a transactional resource (e.g., PostgreSQL, ActiveMQ).
+An IDE (e.g., IntelliJ, VS Code, or Eclipse).
+Lab Setup
+Step 1: Create a Maven Project
+Open a terminal and run the following command to generate a new Maven project:
+mvn archetype:generate -DgroupId=com.example -DartifactId=camel-transactions -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+Navigate to the project directory:
+cd camel-transactions
+Step 2: Add Dependencies
+Update the pom.xml file with the following dependencies:
+
+<dependencies>
+    <!-- Camel Core -->
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-core</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    
+    <!-- Camel Spring Boot (for transaction management) -->
+    <dependency>
+        <groupId>org.apache.camel.springboot</groupId>
+        <artifactId>camel-spring-boot-starter</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    
+    <!-- Transaction Manager (JTA) -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-jta-atomikos</artifactId>
+        <version>2.7.0</version>
+    </dependency>
+    
+    <!-- Database (PostgreSQL) -->
+    <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>42.5.0</version>
+    </dependency>
+    
+    <!-- Camel SQL -->
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-sql</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+</dependencies>
+Step 3: Configure Transaction Manager
+Create a application.properties file in src/main/resources:
+# PostgreSQL Configuration
+spring.datasource.url=jdbc:postgresql://localhost:5432/testdb
+spring.datasource.username=postgres
+spring.datasource.password=password
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# Atomikos (JTA) Configuration
+spring.jta.enabled=true
+spring.jta.log-dir=target/transaction-logs
+Lab Tasks
+Task 1: Define and Implement Distributed Transactions
+Step 1: Create a Camel Route with Transaction Support
+Create a new Java class TransactionRoute.java:
+import org.apache.camel.builder.RouteBuilder;
+import org.springframework.stereotype.Component;
+
+@Component
+public class TransactionRoute extends RouteBuilder {
+    @Override
+    public void configure() throws Exception {
+        from("direct:start")
+            .transacted()  // Enable transaction support
+            .log("Inserting data into database...")
+            .to("sql:INSERT INTO orders (id, product, amount) VALUES (1, 'Laptop', 1000)")
+            .log("Data inserted successfully.");
+    }
+}
+Expected Outcome:
+A Camel route is configured to execute a database transaction.
+Troubleshooting:
+If you encounter errors, ensure:
+The database is running.
+The application.properties file has correct credentials.
+Task 2: Use XA Transactions for Multiple Resource Management
+Step 1: Configure XA Transaction Manager
+Modify application.properties to include XA datasource:
+# XA Datasource Configuration
+spring.jta.atomikos.datasource.xa-data-source-class-name=org.postgresql.xa.PGXADataSource
+spring.jta.atomikos.datasource.xa-properties.url=jdbc:postgresql://localhost:5432/testdb
+spring.jta.atomikos.datasource.xa-properties.user=postgres
+spring.jta.atomikos.datasource.xa-properties.password=password
+Step 2: Update Route to Use XA Resources
+Extend the TransactionRoute to include JMS (ActiveMQ) as a second resource:
+from("direct:xaTransaction")
+    .transacted()
+    .log("Inserting into database...")
+    .to("sql:INSERT INTO orders (id, product, amount) VALUES (2, 'Phone', 500)")
+    .log("Sending JMS message...")
+    .to("activemq:queue:orders");
+Expected Outcome:
+The route now supports distributed transactions across PostgreSQL and ActiveMQ.
+Troubleshooting:
+Ensure ActiveMQ is running and configured in application.properties.
+Task 3: Set Up Transaction Rollback and Commit Strategies
+Step 1: Simulate a Rollback Scenario
+Modify the route to force a rollback:
+from("direct:rollbackTest")
+    .transacted()
+    .log("Attempting transaction...")
+    .to("sql:INSERT INTO orders (id, product, amount) VALUES (3, 'Monitor', 200)")
+    .throwException(new RuntimeException("Forced rollback"))
+    .to("activemq:queue:orders");
+Expected Outcome:
+The transaction will roll back, and no data will be committed.
+Step 2: Verify Transaction Behavior
+Check the database to confirm no entry was added for id=3.
+Conclusion
+In this lab, you learned how to:
+
+Configure and manage transactions in Camel routes.
+Implement distributed transactions using XA.
+Handle rollback and commit scenarios.
+Next Steps
+Explore Camel’s errorHandler for advanced transaction recovery.
+Experiment with different transactional resources (e.g., Kafka, MongoDB).
