@@ -1,0 +1,199 @@
+Lab 10: Creating and Managing RESTful Services in Camel
+Objectives
+Build REST APIs using Apache Camel's REST DSL
+Consume REST services through Camel routes
+Implement HTTP methods (GET, POST, PUT, DELETE) with proper request/response handling
+Configure JSON and XML data formats with automatic marshalling/unmarshalling
+Prerequisites
+Java JDK 11+ installed
+Apache Maven 3.6+
+Basic understanding of REST concepts
+Familiarity with Camel routes and components
+Text editor or IDE (VS Code, Eclipse, IntelliJ)
+Setup Requirements
+Create a new Maven project:
+mvn archetype:generate -DgroupId=com.example -DartifactId=camel-rest-lab -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+Add Camel dependencies to pom.xml:
+<dependencies>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-core</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-rest</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-jetty</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-jackson</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-jaxb</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+</dependencies>
+Lab Tasks
+Task 1: Define REST Endpoints Using REST DSL
+Subtask 1.1: Configure REST Configuration
+Create a new Java class RestServiceRouteBuilder.java
+Add basic REST configuration:
+import org.apache.camel.builder.RouteBuilder;
+
+public class RestServiceRouteBuilder extends RouteBuilder {
+    @Override
+    public void configure() throws Exception {
+        // REST configuration
+        restConfiguration()
+            .component("jetty")
+            .host("localhost")
+            .port(8080)
+            .bindingMode(RestBindingMode.json);
+    }
+}
+Expected Outcome: Basic REST service setup with Jetty server on port 8080 configured for JSON binding.
+
+Subtask 1.2: Define REST Endpoint
+Extend the previous configuration with a sample endpoint:
+rest("/api")
+    .description("Sample REST service")
+    .consumes("application/json")
+    .produces("application/json")
+    
+    .get("/hello")
+        .description("Simple hello endpoint")
+        .to("direct:hello");
+Add a route to handle the request:
+from("direct:hello")
+    .transform().constant("Hello from Camel REST service");
+Expected Outcome: A GET endpoint at http://localhost:8080/api/hello that returns a simple message.
+
+Task 2: Implement HTTP Methods
+Subtask 2.1: Create GET Method
+Add a GET endpoint to retrieve data:
+rest("/api")
+    .get("/products/{id}")
+        .description("Get product by ID")
+        .outType(Product.class)
+        .to("direct:getProduct");
+
+from("direct:getProduct")
+    .process(exchange -> {
+        String id = exchange.getIn().getHeader("id", String.class);
+        // In real app, fetch from database
+        Product product = new Product(id, "Sample Product", 99.99);
+        exchange.getMessage().setBody(product);
+    });
+Note: Create a Product.java class with id, name, and price fields.
+
+Subtask 2.2: Create POST Method
+Add a POST endpoint:
+rest("/api")
+    .post("/products")
+        .description("Create new product")
+        .type(Product.class)
+        .outType(Product.class)
+        .to("direct:createProduct");
+
+from("direct:createProduct")
+    .process(exchange -> {
+        Product product = exchange.getIn().getBody(Product.class);
+        // In real app, save to database
+        product.setId("generated-" + System.currentTimeMillis());
+        exchange.getMessage().setBody(product);
+    });
+Subtask 2.3: Create PUT and DELETE Methods
+Add PUT and DELETE endpoints:
+rest("/api")
+    .put("/products/{id}")
+        .description("Update product")
+        .type(Product.class)
+        .to("direct:updateProduct")
+        
+    .delete("/products/{id}")
+        .description("Delete product")
+        .to("direct:deleteProduct");
+
+from("direct:updateProduct")
+    .process(exchange -> {
+        String id = exchange.getIn().getHeader("id", String.class);
+        Product updatedProduct = exchange.getIn().getBody(Product.class);
+        // Update logic here
+        exchange.getMessage().setBody("Product " + id + " updated");
+    });
+
+from("direct:deleteProduct")
+    .process(exchange -> {
+        String id = exchange.getIn().getHeader("id", String.class);
+        // Delete logic here
+        exchange.getMessage().setBody("Product " + id + " deleted");
+    });
+Expected Outcome: Complete CRUD operations available at /api/products endpoints.
+
+Task 3: Implement Data Formats
+Subtask 3.1: JSON Support
+The previous examples already use JSON binding. To make it explicit:
+restConfiguration()
+    .component("jetty")
+    .host("localhost")
+    .port(8080)
+    .bindingMode(RestBindingMode.json)
+    .dataFormatProperty("prettyPrint", "true");
+Subtask 3.2: XML Support
+Add XML binding support:
+restConfiguration()
+    // ... existing config
+    .bindingMode(RestBindingMode.auto);
+
+rest("/api")
+    .get("/products/xml/{id}")
+        .produces("application/xml")
+        .outType(Product.class)
+        .to("direct:getProductXml");
+
+// Add JAXB annotation to Product class
+@XmlRootElement
+public class Product {
+    // ... fields and methods
+}
+Troubleshooting Tip: If XML doesn't work, ensure camel-jaxb dependency is included and classes are properly annotated.
+
+Testing the Services
+Start the Camel context:
+public static void main(String[] args) throws Exception {
+    CamelContext context = new DefaultCamelContext();
+    context.addRoutes(new RestServiceRouteBuilder());
+    context.start();
+    Thread.sleep(5 * 60 * 1000);
+    context.stop();
+}
+Test endpoints using curl:
+# GET
+curl http://localhost:8080/api/hello
+
+# POST
+curl -X POST -H "Content-Type: application/json" -d '{"name":"New Product","price":29.99}' http://localhost:8080/api/products
+
+# XML
+curl -H "Accept: application/xml" http://localhost:8080/api/products/xml/123
+Conclusion
+In this lab, you have:
+
+Configured a Camel REST service using the REST DSL
+Implemented all major HTTP methods (GET, POST, PUT, DELETE)
+Set up automatic JSON and XML data binding
+Created a complete CRUD REST API with Camel
+Key Takeaways:
+
+Camel's REST DSL provides a fluent API for defining REST endpoints
+Binding modes handle automatic conversion between Java objects and data formats
+REST endpoints can be easily connected to existing Camel routes
+Multiple data formats can be supported simultaneously

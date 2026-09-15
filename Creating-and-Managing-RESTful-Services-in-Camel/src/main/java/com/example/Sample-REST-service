@@ -1,0 +1,60 @@
+rest("/api")
+    .description("Sample REST service")
+    .consumes("application/json")
+    .produces("application/json")
+    
+    .get("/hello")
+        .description("Simple hello endpoint")
+        .to("direct:hello");
+rest("/api")
+    .get("/products/{id}")
+        .description("Get product by ID")
+        .outType(Product.class)
+        .to("direct:getProduct");
+
+from("direct:getProduct")
+    .process(exchange -> {
+        String id = exchange.getIn().getHeader("id", String.class);
+        // In real app, fetch from database
+        Product product = new Product(id, "Sample Product", 99.99);
+        exchange.getMessage().setBody(product);
+    });
+rest("/api")
+    .put("/products/{id}")
+        .description("Update product")
+        .type(Product.class)
+        .to("direct:updateProduct")
+        
+    .delete("/products/{id}")
+        .description("Delete product")
+        .to("direct:deleteProduct");
+
+from("direct:updateProduct")
+    .process(exchange -> {
+        String id = exchange.getIn().getHeader("id", String.class);
+        Product updatedProduct = exchange.getIn().getBody(Product.class);
+        // Update logic here
+        exchange.getMessage().setBody("Product " + id + " updated");
+    });
+
+from("direct:deleteProduct")
+    .process(exchange -> {
+        String id = exchange.getIn().getHeader("id", String.class);
+        // Delete logic here
+        exchange.getMessage().setBody("Product " + id + " deleted");
+    });
+restConfiguration()
+    // ... existing config
+    .bindingMode(RestBindingMode.auto);
+
+rest("/api")
+    .get("/products/xml/{id}")
+        .produces("application/xml")
+        .outType(Product.class)
+        .to("direct:getProductXml");
+
+// Add JAXB annotation to Product class
+@XmlRootElement
+public class Product {
+    // ... fields and methods
+}
