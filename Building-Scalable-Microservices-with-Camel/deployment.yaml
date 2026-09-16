@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: camel-microservice
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: camel-microservice
+  template:
+    metadata:
+      labels:
+        app: camel-microservice
+    spec:
+      containers:
+      - name: camel
+        image: yourusername/camel-microservice:1.0
+        ports:
+        - containerPort: 8080

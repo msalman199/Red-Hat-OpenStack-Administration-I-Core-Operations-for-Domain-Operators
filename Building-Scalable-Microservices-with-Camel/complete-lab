@@ -1,0 +1,140 @@
+Lab 17: Building Scalable Microservices with Camel
+Objectives
+By the end of this lab, you will be able to:
+
+Develop microservices using Apache Camel
+Deploy and scale Camel-based microservices on Kubernetes/OpenShift
+Monitor and optimize resource usage in containerized environments
+Prerequisites
+Basic knowledge of Java and Spring Boot
+Docker installed (v20.10+)
+Minikube or OpenShift CLI (oc) configured
+Apache Camel 3.x dependencies
+kubectl installed (for Kubernetes)
+JDK 11+
+Lab Setup
+Install Required Tools
+
+# Install Docker
+sudo apt-get update && sudo apt-get install docker.io -y
+
+# Install Minikube (for local Kubernetes)
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+minikube start --driver=docker
+
+# Install kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+Initialize a Camel Spring Boot Project
+Use Spring Initializr or run:
+
+curl https://start.spring.io/starter.zip -d dependencies=camel,web \
+-d type=maven-project -d baseDir=camel-microservice -o camel-microservice.zip
+unzip camel-microservice.zip && cd camel-microservice
+Task 1: Develop Camel-Based Microservices
+Subtask 1.1: Create a Simple Camel Route
+Edit src/main/java/com/example/CamelRoute.java:
+
+import org.apache.camel.builder.RouteBuilder;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CamelRoute extends RouteBuilder {
+    @Override
+    public void configure() throws Exception {
+        from("timer:foo?period=5000")
+          .log("Microservice triggered at ${header.firedTime}");
+    }
+}
+Expected Outcome:
+The service logs a message every 5 seconds when started.
+
+Subtask 1.2: Add REST Endpoint
+Add Camel REST DSL to CamelRoute.java:
+
+rest("/api")
+  .get("/hello")
+  .produces("text/plain")
+  .route()
+  .setBody(constant("Hello from Camel Microservice!"))
+  .endRest();
+Test the Endpoint:
+
+./mvnw spring-boot:run
+curl http://localhost:8080/api/hello
+Expected Output: Hello from Camel Microservice!
+
+Task 2: Scale Microservices with Kubernetes/OpenShift
+Subtask 2.1: Containerize the Microservice
+Create Dockerfile:
+
+FROM eclipse-temurin:11-jre
+COPY target/*.jar app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+Build and push to Docker Hub:
+
+./mvnw package
+docker build -t yourusername/camel-microservice:1.0 .
+docker push yourusername/camel-microservice:1.0
+Subtask 2.2: Deploy to Kubernetes
+Create deployment.yaml:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: camel-microservice
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: camel-microservice
+  template:
+    metadata:
+      labels:
+        app: camel-microservice
+    spec:
+      containers:
+      - name: camel
+        image: yourusername/camel-microservice:1.0
+        ports:
+        - containerPort: 8080
+Deploy and verify:
+
+kubectl apply -f deployment.yaml
+kubectl get pods -w  # Watch scaling status
+Task 3: Monitor and Optimize Resources
+Subtask 3.1: Add Metrics with Prometheus
+Add dependency to pom.xml:
+
+<dependency>
+  <groupId>org.apache.camel</groupId>
+  <artifactId>camel-micrometer</artifactId>
+</dependency>
+Configure metrics in application.properties:
+
+management.endpoints.web.exposure.include=*
+Subtask 3.2: Autoscaling
+Create HPA (Horizontal Pod Autoscaler):
+
+kubectl autoscale deployment camel-microservice --cpu-percent=50 --min=2 --max=5
+Generate load to test scaling:
+
+kubectl run -i --tty load-generator --image=busybox -- sh
+while true; do wget -q -O- http://camel-microservice:8080/api/hello; done
+Conclusion
+In this lab, you:
+
+Built a Camel microservice with REST capabilities
+Containerized and deployed it on Kubernetes with scaling
+Implemented monitoring and autoscaling
+Key Takeaways:
+
+Camel integrates seamlessly with Spring Boot for microservices
+Kubernetes provides declarative scaling for Camel routes
+Resource monitoring is critical for production deployments
+Troubleshooting Tips
+If pods don't scale, check HPA events:
+kubectl describe hpa camel-microservice
+For Docker push errors, verify login:
+docker login
