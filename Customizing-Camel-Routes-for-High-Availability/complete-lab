@@ -1,0 +1,123 @@
+Lab 16: Customizing Camel Routes for High Availability
+Objectives
+By the end of this lab, you will be able to:
+
+Configure Apache Camel routes in a high-availability (HA) environment.
+Implement load balancing and failover strategies for fault tolerance.
+Use persistent messaging to prevent data loss.
+Prerequisites
+Before starting, ensure you have:
+
+Basic knowledge of Apache Camel and Java.
+A working OpenJDK (version 11 or later) installed.
+Apache Camel (latest version) set up in your development environment.
+A message broker (e.g., Apache ActiveMQ or RabbitMQ) for persistent messaging.
+Access to a Kubernetes/OpenShift cluster (optional, for HA testing).
+Lab Tasks
+Task 1: Set Up Clustered Camel Routes in an HA Environment
+Objective: Configure Camel routes in a clustered environment for high availability.
+
+Subtask 1.1: Install and Configure Apache Camel
+Install Apache Camel using Maven by adding the following dependency to your pom.xml:
+
+<dependency>
+    <groupId>org.apache.camel</groupId>
+    <artifactId>camel-core</artifactId>
+    <version>3.20.0</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.camel</groupId>
+    <artifactId>camel-quarkus</artifactId>
+    <version>3.20.0</version>
+</dependency>
+Create a basic Camel route in a Java class:
+
+import org.apache.camel.builder.RouteBuilder;
+
+public class HighAvailabilityRoute extends RouteBuilder {
+    @Override
+    public void configure() throws Exception {
+        from("timer:haTimer?period=5000")
+            .log("High Availability Route: Message Sent");
+    }
+}
+Run the route in a clustered environment (e.g., Kubernetes/OpenShift) by deploying multiple instances.
+
+Expected Outcome:
+
+The Camel route runs in multiple instances, ensuring redundancy.
+Task 2: Implement Load Balancing and Failover Strategies
+Objective: Use Camel’s load balancing and failover mechanisms for fault tolerance.
+
+Subtask 2.1: Configure Load Balancing
+Modify the route to include a load balancer:
+
+from("direct:start")
+    .loadBalance()
+        .roundRobin()
+        .to("seda:route1", "seda:route2");
+Define secondary routes:
+
+from("seda:route1")
+    .log("Processing in Route 1");
+
+from("seda:route2")
+    .log("Processing in Route 2");
+Subtask 2.2: Implement Failover
+Use Camel’s failover mechanism:
+
+from("direct:start")
+    .onException(Exception.class)
+        .maximumRedeliveries(3)
+        .redeliveryDelay(1000)
+    .end()
+    .to("direct:fallback");
+Define a fallback route:
+
+from("direct:fallback")
+    .log("Fallback route activated due to failure");
+Expected Outcome:
+
+Messages are distributed evenly across routes.
+If a route fails, the system retries and falls back to a secondary route.
+Task 3: Implement Persistent Messaging
+Objective: Ensure no data loss by using persistent message storage.
+
+Subtask 3.1: Configure Apache ActiveMQ for Persistence
+Install ActiveMQ and add the Camel JMS dependency:
+
+<dependency>
+    <groupId>org.apache.camel</groupId>
+    <artifactId>camel-jms</artifactId>
+    <version>3.20.0</version>
+</dependency>
+Configure a persistent JMS endpoint:
+
+from("jms:queue:orders?transacted=true")
+    .to("log:PersistentMessage");
+Enable persistence in ActiveMQ (activemq.xml):
+
+<persistenceAdapter>
+    <kahaDB directory="${activemq.data}/kahadb"/>
+</persistenceAdapter>
+Expected Outcome:
+
+Messages are stored persistently in ActiveMQ and survive broker restarts.
+Conclusion
+In this lab, you:
+
+Configured high-availability Camel routes in a clustered environment.
+Implemented load balancing and failover for fault tolerance.
+Ensured persistent messaging to prevent data loss.
+By following these steps, you can build resilient Camel applications that maintain uptime and reliability in production environments.
+
+Troubleshooting Tips
+ActiveMQ not starting? Check activemq.log for errors.
+Routes not balancing? Verify all endpoints are correctly defined.
+Persistence issues? Ensure the kahadb directory has write permissions.
+Next Steps:
+
+Explore Kubernetes-based HA deployments for Camel.
+Experiment with different load balancing policies (e.g., random, sticky).
+Implement circuit breakers for advanced fault tolerance.
+Happy learning! 🚀
