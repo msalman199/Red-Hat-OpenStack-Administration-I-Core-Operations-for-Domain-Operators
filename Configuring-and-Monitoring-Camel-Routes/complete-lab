@@ -1,0 +1,122 @@
+Lab 13: Configuring and Monitoring Camel Routes
+Objectives
+By the end of this lab, you will be able to:
+
+Monitor Camel routes using built-in tools and logs
+Integrate Camel with Prometheus and Grafana for advanced monitoring
+Configure alerts for route failures and performance issues
+Prerequisites
+Basic understanding of Apache Camel and Java
+JDK 11+ installed
+Apache Camel 3.x (standalone or Spring Boot)
+Maven installed
+Docker installed (for Prometheus/Grafana)
+Basic Linux command line knowledge
+Lab Setup
+Create a new Camel project:
+mvn archetype:generate \
+  -DarchetypeGroupId=org.apache.camel.archetypes \
+  -DarchetypeArtifactId=camel-archetype-spring-boot \
+  -DarchetypeVersion=3.20.0
+Navigate to the project directory:
+cd camel-spring-boot-project
+Task 1: Monitoring Routes with Camel's Built-in Tools
+Subtask 1.1: Enable Route Logging
+Open src/main/resources/application.properties and add:
+# Enable Camel logging
+camel.springboot.main-run-controller=true
+logging.level.org.apache.camel=DEBUG
+Create a simple route in src/main/java/com/example/MyRouteBuilder.java:
+from("timer:foo?period=5000")
+  .routeId("monitored-route")
+  .log("Route executed at ${header.firedTime}")
+  .to("log:route.output");
+Run the application:
+mvn spring-boot:run
+Expected Outcome: You should see detailed logs in the console showing route execution every 5 seconds.
+
+Subtask 1.2: Use JMX for Monitoring
+Add JMX configuration to application.properties:
+# Enable JMX
+camel.context.mbean-export.enabled=true
+Install JConsole (comes with JDK) and connect to your running Camel application.
+Troubleshooting Tip: If JMX doesn't connect, ensure your Java process has these JVM options:
+
+-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=1099 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false
+Task 2: Integrate with Prometheus and Grafana
+Subtask 2.1: Add Prometheus Metrics
+Add dependencies to pom.xml:
+<dependency>
+  <groupId>org.apache.camel</groupId>
+  <artifactId>camel-micrometer</artifactId>
+</dependency>
+<dependency>
+  <groupId>io.micrometer</groupId>
+  <artifactId>micrometer-registry-prometheus</artifactId>
+</dependency>
+Configure metrics in application.properties:
+# Enable Prometheus metrics
+management.endpoints.web.exposure.include=health,metrics,prometheus
+management.endpoint.prometheus.enabled=true
+Modify your route to include metrics:
+from("timer:foo?period=5000")
+  .routeId("monitored-route")
+  .to("micrometer:counter:route.counter")
+  .log("Route executed at ${header.firedTime}");
+Subtask 2.2: Set Up Prometheus and Grafana
+Create prometheus.yml:
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'camel'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+Run Prometheus and Grafana:
+docker run -d -p 9090:9090 -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+docker run -d -p 3000:3000 grafana/grafana
+Access Prometheus at http://localhost:9090 and Grafana at http://localhost:3000
+
+In Grafana:
+
+Add Prometheus as data source (URL: http://host.docker.internal:9090)
+Import Camel dashboard (ID: 11600)
+Expected Outcome: You should see Camel metrics visualized in Grafana.
+
+Task 3: Configure Alerts
+Subtask 3.1: Set Up Route Failure Alerts
+Modify your route to include error handling:
+from("timer:foo?period=5000")
+  .routeId("monitored-route")
+  .doTry()
+    .process(exchange -> {
+      // Simulate occasional failure
+      if (System.currentTimeMillis() % 3 == 0) {
+        throw new RuntimeException("Simulated error");
+      }
+    })
+  .doCatch(Exception.class)
+    .to("micrometer:counter:route.errors")
+    .log("Error occurred: ${exception.message}")
+  .end();
+Subtask 3.2: Create Grafana Alert
+In Grafana:
+Navigate to Alert -> Notification channels
+Add your preferred channel (Email, Slack, etc.)
+Create a new dashboard panel with query: increase(route_errors_total[1m]) > 0
+Set alert threshold and notification
+Expected Outcome: You'll receive alerts when route errors exceed threshold.
+
+Conclusion
+In this lab, you learned to:
+
+Monitor Camel routes using built-in logging and JMX
+Integrate Camel with Prometheus and Grafana for advanced metrics visualization
+Configure alerts for route failures and performance issues
+These skills are essential for maintaining production-grade Camel applications and are particularly valuable for Red Hat OpenShift Development certification.
+
+Additional Resources
+Camel Monitoring Documentation
+Micrometer with Prometheus
+Grafana Dashboards for Camel
