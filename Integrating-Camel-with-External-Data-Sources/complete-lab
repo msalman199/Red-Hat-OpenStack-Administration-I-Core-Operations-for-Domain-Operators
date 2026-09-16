@@ -1,0 +1,138 @@
+Time Spent Today:
+2h 50m
+
+Start Lab
+✅ Connected
+Delete Lab
+SSH Access
+
+Video
+Lab Material
+Lab 19: Integrating Camel with External Data Sources
+Objectives
+Configure Apache Camel to interact with external databases (SQL and NoSQL)
+Set up file system integration for reading/writing data
+Implement data transformations between CSV, JSON, and XML formats
+Understand Camel's component model for data integration
+Prerequisites
+Java JDK 11+ installed
+Apache Maven project set up
+Basic understanding of Apache Camel
+Access to a terminal/command prompt
+Docker installed (for database containers)
+Setup Requirements
+Create a new Maven project:
+mvn archetype:generate -DgroupId=com.camel.lab -DartifactId=camel-data-integration -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+Add Camel dependencies to pom.xml:
+<dependencies>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-core</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-sql</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-jackson</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-csv</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+</dependencies>
+Lab Tasks
+Task 1: File System Integration
+Subtask 1.1: Reading from Files
+Create a route to read from a directory:
+from("file:input?noop=true")
+    .log("File content: ${body}")
+    .to("file:output");
+Create a sample input file input/test.txt with some sample content.
+Expected Outcome: The file should be copied to the output directory with the same content.
+
+Subtask 1.2: Writing to Files
+Modify the route to transform content before writing:
+from("file:input?noop=true")
+    .transform(body().append("\nProcessed at: ").append(header("CamelFileName")))
+    .to("file:output");
+Expected Outcome: Output files will contain original content plus processing metadata.
+
+Task 2: Database Integration
+Subtask 2.1: SQL Database Setup
+Start a PostgreSQL container:
+docker run --name camel-postgres -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres
+Add PostgreSQL dependency:
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+    <version>42.6.0</version>
+</dependency>
+Create a route to insert data:
+from("timer:dbTimer?period=10000")
+    .setBody(constant("INSERT INTO users(name, email) VALUES ('John', 'john@example.com')"))
+    .to("jdbc:dataSource");
+Configure datasource in application.properties:
+camel.datasource.url=jdbc:postgresql://localhost:5432/postgres
+camel.datasource.username=postgres
+camel.datasource.password=password
+Expected Outcome: Every 10 seconds, a new record is inserted into the database.
+
+Subtask 2.2: NoSQL Integration (MongoDB)
+Start MongoDB container:
+docker run --name camel-mongo -p 27017:27017 -d mongo
+Add MongoDB dependencies:
+<dependency>
+    <groupId>org.apache.camel</groupId>
+    <artifactId>camel-mongodb</artifactId>
+    <version>3.20.0</version>
+</dependency>
+Create a MongoDB route:
+from("direct:insertMongo")
+    .setBody(constant("{name: 'Jane', email: 'jane@example.com'}"))
+    .to("mongodb:myDb?database=test&collection=users&operation=insert");
+Expected Outcome: Document is inserted into MongoDB when route is triggered.
+
+Task 3: Data Transformation
+Subtask 3.1: CSV to JSON
+Create a sample CSV file input/data.csv:
+id,name,email
+1,John,john@example.com
+2,Jane,jane@example.com
+Create transformation route:
+from("file:input?fileName=data.csv&noop=true")
+    .unmarshal().csv()
+    .marshal().json()
+    .to("file:output?fileName=data.json");
+Expected Outcome: JSON file created with equivalent data structure.
+
+Subtask 3.2: XML to JSON
+Add XML data format dependency:
+<dependency>
+    <groupId>org.apache.camel</groupId>
+    <artifactId>camel-jaxb</artifactId>
+    <version>3.20.0</version>
+</dependency>
+Create transformation route:
+from("file:input?noop=true")
+    .unmarshal().jacksonXml()
+    .marshal().json()
+    .to("file:output");
+Troubleshooting Tips
+If database connections fail, verify container is running and credentials are correct
+For file operations, check directory permissions
+Enable Camel debug logging for detailed route tracing
+For transformation issues, verify the input data matches expected format
+Conclusion
+In this lab, you have successfully:
+
+Configured Camel to interact with file systems
+Integrated with both SQL and NoSQL databases
+Implemented data transformations between common formats
+Gained practical experience with Camel's component model
+These skills form the foundation for building robust data integration solutions using Apache Camel.
