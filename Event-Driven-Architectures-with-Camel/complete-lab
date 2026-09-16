@@ -1,0 +1,136 @@
+Lab 14: Event-Driven Architectures with Camel
+Objectives
+By the end of this lab, you will be able to:
+
+Build event-driven architectures using Apache Camel
+Integrate Camel with message brokers (ActiveMQ and Kafka)
+Test event-driven workflows in cloud-native environments
+Prerequisites
+Java JDK 11+ installed
+Maven 3.6+ installed
+Docker and Docker Compose (for Kafka setup)
+Basic understanding of Apache Camel and messaging systems
+Lab Setup
+Initialize a Maven Project
+Create a new Camel project using Maven:
+
+mvn archetype:generate \
+    -DarchetypeGroupId=org.apache.camel.archetypes \
+    -DarchetypeArtifactId=camel-archetype-java \
+    -DarchetypeVersion=3.20.0
+Fill in the required details (groupId, artifactId, version).
+
+Add Dependencies
+Edit pom.xml to include ActiveMQ and Kafka dependencies:
+
+<dependencies>
+    <!-- Camel Core -->
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-core</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <!-- ActiveMQ -->
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-activemq</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <!-- Kafka -->
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-kafka</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+</dependencies>
+Task 1: Set Up Camel Routes for Event-Driven Processing
+Subtask 1.1: Create a Basic Event-Driven Route
+Create a new Java class EventDrivenRoute.java:
+
+import org.apache.camel.builder.RouteBuilder;
+
+public class EventDrivenRoute extends RouteBuilder {
+    @Override
+    public void configure() throws Exception {
+        from("timer:eventTimer?period=5000")
+            .setBody().simple("Event generated at ${date:now:yyyy-MM-dd HH:mm:ss}")
+            .log("Event: ${body}");
+    }
+}
+Expected Outcome:
+The route generates an event every 5 seconds and logs it.
+
+Subtask 1.2: Add a File-Based Event Trigger
+Modify the route to trigger on file creation:
+
+from("file:input?noop=true")
+    .log("File event detected: ${header.CamelFileName}");
+Test the Route:
+Create a file in the input directory.
+Verify the log output.
+Task 2: Integrate Camel with ActiveMQ
+Subtask 2.1: Set Up ActiveMQ
+Run ActiveMQ broker using Docker:
+
+docker run -p 61616:61616 -p 8161:8161 rmohr/activemq
+Configure ActiveMQ in Camel: Add to EventDrivenRoute.java:
+
+from("activemq:queue:testQueue")
+    .log("Received from ActiveMQ: ${body}");
+Send a Test Message:
+
+from("timer:activeMqTimer?period=10000")
+    .setBody().simple("Test message at ${date:now:HH:mm:ss}")
+    .to("activemq:queue:testQueue");
+Expected Outcome:
+Messages appear in the ActiveMQ queue and are logged every 10 seconds.
+
+Task 3: Integrate Camel with Kafka
+Subtask 3.1: Set Up Kafka
+Start Kafka using Docker Compose (docker-compose.yml):
+
+version: '3'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.0
+    ports: ["2181:2181"]
+  kafka:
+    image: confluentinc/cp-kafka:7.0.0
+    ports: ["9092:9092"]
+    depends_on: [zookeeper]
+Run:
+
+docker-compose up -d
+Subtask 3.2: Create Kafka Producer/Consumer Routes
+Add to EventDrivenRoute.java:
+
+// Producer
+from("timer:kafkaTimer?period=8000")
+    .setBody().simple("Kafka message at ${date:now:HH:mm:ss}")
+    .to("kafka:testTopic?brokers=localhost:9092");
+
+// Consumer
+from("kafka:testTopic?brokers=localhost:9092")
+    .log("Received from Kafka: ${body}");
+Expected Outcome:
+Messages are produced to Kafka every 8 seconds and consumed by the route.
+Task 4: Test in Cloud-Native Environments
+Subtask 4.1: Deploy to OpenShift
+Install the Camel K Operator in OpenShift.
+Deploy the route using Camel K:
+kamel run EventDrivenRoute.java --dev
+Subtask 4.2: Verify Logs
+Check pod logs in OpenShift to confirm event processing.
+
+Troubleshooting Tips
+ActiveMQ Connection Issues: Verify the broker URL and port.
+Kafka Errors: Ensure ZooKeeper and Kafka are running.
+OpenShift Deployment: Check resource limits and Camel K operator logs.
+Conclusion
+In this lab, you:
+
+Built event-driven Camel routes.
+Integrated Camel with ActiveMQ and Kafka.
+Tested workflows in a cloud-native environment.
+Final Verification:
+Confirm all routes are active and processing events as expected.
