@@ -1,0 +1,174 @@
+32m
+
+Time Spent Today:
+2h 28m
+
+Start Lab
+✅ Connected
+Delete Lab
+SSH Access
+
+Video
+Lab Material
+Lab 18: Testing and Debugging Camel Routes
+Objectives
+By the end of this lab, you will be able to:
+
+Use Camel’s debugging and logging features to trace route execution.
+Identify and fix routing errors using route tracing tools.
+Create unit tests to validate routes and ensure correctness.
+Prerequisites
+Basic knowledge of Apache Camel and Java.
+JDK 11 or later installed.
+Maven installed.
+An IDE (Eclipse, IntelliJ, or VS Code).
+Apache Camel dependencies (will be set up in the lab).
+Lab Setup
+Step 1: Create a Maven Project
+Open a terminal and run:
+mvn archetype:generate -DgroupId=com.example -DartifactId=camel-debugging-lab -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+Navigate to the project directory:
+cd camel-debugging-lab
+Open pom.xml and add Camel dependencies:
+<dependencies>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-core</artifactId>
+        <version>3.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.camel</groupId>
+        <artifactId>camel-test-junit5</artifactId>
+        <version>3.20.0</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>2.0.7</version>
+    </dependency>
+</dependencies>
+Update the project:
+mvn clean install
+Expected Outcome: A Maven project with Camel dependencies is ready.
+
+Task 1: Debugging and Logging Camel Routes
+Step 1: Create a Simple Camel Route
+Create a new Java class SimpleRouteBuilder.java:
+package com.example;
+
+import org.apache.camel.builder.RouteBuilder;
+
+public class SimpleRouteBuilder extends RouteBuilder {
+    @Override
+    public void configure() throws Exception {
+        from("timer:myTimer?period=1000")
+            .log("Processing message: ${body}")
+            .to("log:output");
+    }
+}
+Step 2: Enable Debug Logging
+Add log4j2.xml in src/main/resources:
+
+<Configuration>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="org.apache.camel" level="DEBUG"/>
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
+Run the route:
+
+package com.example;
+
+import org.apache.camel.main.Main;
+
+public class App {
+    public static void main(String[] args) throws Exception {
+        Main main = new Main();
+        main.configure().addRoutesBuilder(new SimpleRouteBuilder());
+        main.run();
+    }
+}
+Expected Outcome: Logs show debug messages for route execution.
+
+Task 2: Route Tracing and Error Handling
+Step 1: Enable Route Tracing
+Modify SimpleRouteBuilder.java to enable tracing:
+
+public void configure() throws Exception {
+    getContext().setTracing(true);
+    from("timer:myTimer?period=1000")
+        .log("Processing message: ${body}")
+        .to("log:output");
+}
+Run the application again.
+
+Expected Outcome: Detailed trace logs appear in the console.
+
+Step 2: Simulate and Debug an Error
+Introduce an error in the route:
+
+from("timer:myTimer?period=1000")
+    .log("Processing message: ${body}")
+    .process(exchange -> { throw new RuntimeException("Simulated error"); })
+    .to("log:output");
+Add error handling:
+
+errorHandler(defaultErrorHandler()
+    .maximumRedeliveries(3)
+    .redeliveryDelay(1000));
+Expected Outcome: The error is logged, and retries are visible in logs.
+
+Task 3: Unit Testing Camel Routes
+Step 1: Create a Test Class
+Create SimpleRouteTest.java in src/test/java:
+
+package com.example;
+
+import org.apache.camel.RoutesBuilder;
+import org.apache.camel.builder.AdviceWith;
+import org.apache.camel.test.junit5.CamelTestSupport;
+import org.junit.jupiter.api.Test;
+
+public class SimpleRouteTest extends CamelTestSupport {
+    @Override
+    protected RoutesBuilder createRouteBuilder() throws Exception {
+        return new SimpleRouteBuilder();
+    }
+
+    @Test
+    public void testRoute() throws Exception {
+        AdviceWith.adviceWith(context, "routeId", a -> {
+            a.weaveByToString(".*log:output.*").replace().to("mock:output");
+        });
+
+        getMockEndpoint("mock:output").expectedMessageCount(1);
+        template.sendBody("direct:start", "Test Message");
+        assertMockEndpointsSatisfied();
+    }
+}
+Run the test:
+
+mvn test
+Expected Outcome: Test passes, confirming route behavior.
+
+Conclusion
+In this lab, you learned:
+
+How to enable debugging and logging in Camel routes.
+How to use tracing to diagnose issues.
+How to handle errors and retry failed operations.
+How to write unit tests for Camel routes.
+By mastering these techniques, you can efficiently troubleshoot and validate Camel routes in production environments.
+
+Troubleshooting Tips
+If logs don’t appear, check log4j2.xml placement.
+For test failures, verify route IDs and mock endpoints.
+Ensure Camel dependencies match the version in pom.xml.
